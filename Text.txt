@@ -1,0 +1,165 @@
+Step 2: Local Development Setup
+Start Development Environment
+# Build the project
+npm run build
+
+# Start in development mode
+npm run dev
+
+# Or start individual services
+npm run start:chatbot
+npm run start:fraud-detection
+npm run start:recommendation
+Run Tests
+# Run all tests
+npm test
+
+# Run specific test suites
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+☁️ Step 3: Cloud Deployment (Recommended)
+Configure Google Cloud
+# Authenticate with Google Cloud
+gcloud auth login
+
+# Set your project
+gcloud config set project YOUR_PROJECT_ID
+
+# Enable required APIs
+gcloud services enable container.googleapis.com
+gcloud services enable compute.googleapis.com
+gcloud services enable monitoring.googleapis.com
+Deploy to GKE (Production-Ready)
+# Deploy everything to Google Kubernetes Engine
+./scripts/deploy-gke.ps1 -Environment development -CreateCluster
+
+# This will:
+# - Create a GKE cluster
+# - Build and push Docker images
+# - Deploy all services
+# - Set up networking and ingress
+# - Configure monitoring
+Set Up Monitoring
+# Deploy monitoring stack (Prometheus, Grafana, Jaeger)
+./scripts/setup-monitoring.ps1 -Environment development
+
+# Access monitoring dashboards:
+# - Grafana: Check output for URL and credentials
+# - Prometheus: For metrics and alerts
+# - Jaeger: For distributed tracing
+🐳 Step 4: Local Docker Setup (Alternative)
+If you prefer to run locally with Docker:
+
+# Build all Docker images
+docker-compose build
+
+# Start all services
+docker-compose up -d
+
+# Check service status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+🧪 Step 5: Verify Everything Works
+Run Health Checks
+# Check all services are healthy
+kubectl get pods -n agentic-dev  # For GKE deployment
+# OR
+docker-compose ps               # For local Docker
+
+# Test API endpoints
+curl http://localhost:8082/health  # Chatbot
+curl http://localhost:8083/health  # Fraud Detection
+curl http://localhost:8085/health  # Recommendation
+Run End-to-End Tests
+# Run comprehensive test suite
+npm run test:e2e
+
+# Run performance tests
+npm run test:performance
+
+# Run specific scenarios
+npm run test:fraud-scenarios
+npm run test:recommendation-accuracy
+📊 Step 6: Access Your System
+Service Endpoints
+After deployment, you'll have access to:
+
+Chatbot API: http://your-domain/api/chatbot
+Fraud Detection: http://your-domain/api/fraud
+Recommendations: http://your-domain/api/recommendations
+MCP Gateway: http://your-domain/api/mcp
+A2A Hub: http://your-domain/api/a2a
+Monitoring Dashboards
+Grafana: System metrics and custom dashboards
+Prometheus: Raw metrics and alerting rules
+Jaeger: Distributed tracing and performance analysis
+🔧 Step 7: Configuration
+Environment-Specific Configuration
+# Validate configuration
+./scripts/validate-config.ts --environment development
+
+# Deploy configuration updates
+./scripts/config-deploy.ps1 -Environment development
+
+# Check configuration consistency
+./scripts/validate-config.ts --check-consistency
+🚨 Troubleshooting
+If you encounter issues:
+
+Check the logs:
+
+kubectl logs -f deployment/chatbot-agent -n agentic-dev
+Use the troubleshooting guide:
+
+Open docs/runbooks/troubleshooting-guide.md
+Follow the step-by-step diagnostic procedures
+Check system health:
+
+kubectl get pods -n agentic-dev
+kubectl top nodes
+📚 Next Steps
+Once everything is running:
+
+Explore the APIs using the provided endpoints
+Monitor performance through Grafana dashboards
+Review logs for any issues or optimization opportunities
+Scale services based on your load requirements
+Customize agents for your specific use cases
+🎯 Quick Start Commands
+For the fastest setup:
+
+# Complete setup in one go
+npm install
+./scripts/deploy-gke.ps1 -Environment development -CreateCluster
+./scripts/setup-monitoring.ps1 -Environment development
+npm run test:e2e
+This will get your entire agentic microservices system up and running with monitoring and testing in about 15-20 minutes!
+
+Need help with any specific step? Let me know! 🚀
+
+save it start.txt file 
+
+Kiro
+Created
+
+start.txt
+
+
+Perfect! I've saved the complete startup guide to start.txt. This file now contains all the step-by-step instructions to get your agentic microservices project up and running.
+
+The file includes:
+
+✅ Prerequisites and tool installation
+✅ Project setup and dependency installation
+✅ Local development environment setup
+✅ Cloud deployment to GKE
+✅ Monitoring stack setup
+✅ Docker alternative setup
+✅ Health checks and verification
+✅ Configuration management
+✅ Troubleshooting guidance
+✅ Quick start commands for fastest setup
+You can now reference start.txt anytime you need to set up the project or help others get started! 🚀

@@ -1,0 +1,389 @@
+# GitHub Actions CI/CD Pipeline for Integration Tests
+name: Integration Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run integration tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  NODE_VERSION: '18'
+  DOCKER_BUILDKIT: 1
+  TEST_TIMEOUT: 1800000  # 30 minutes
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      test-matrix: ${{ steps.generate-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate test matrix
+        id: generate-matrix
+        run: |
+          echo "matrix={\"suite\":[\"agent-communication\",\"end-to-end\",\"performance\"]}" >> $GITHUB_OUTPUT
+
+  integration-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.setup.outputs.test-matrix) }}
+      fail-fast: false
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run build
+
+      - name: Setup test environment
+        run: |
+          # Create test directories
+          mkdir -p test-reports/integration
+          mkdir -p test-data
+          
+          # Set environment variables for testing
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+          echo "TEST_BASE_URL=http://localhost" >> $GITHUB_ENV
+          echo "REDIS_URL=redis://localhost:6379" >> $GITHUB_ENV
+
+      - name: Start mock services
+        run: |
+          # Start services in background
+          npm run docker:compose:up &
+          
+          # Wait for services to be ready
+          timeout 120 bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
+          timeout 120 bash -c 'until curl -f http://localhost:8081/health; do sleep 2; done'
+
+      - name: Run integration tests - ${{ matrix.suite }}
+        run: |
+          npm run test:integration:${{ matrix.suite }}
+        timeout-minutes: 30
+        env:
+          TEST_SUITE: ${{ matrix.suite }}
+          JEST_TIMEOUT: ${{ env.TEST_TIMEOUT }}
+
+      - name: Collect test artifacts
+        if: always()
+        run: |
+          # Collect logs
+          mkdir -p test-artifacts/${{ matrix.suite }}
+          npm run docker:compose:logs > test-artifacts/${{ matrix.suite }}/service-logs.txt
+          
+          # Collect test reports
+          cp -r test-reports/* test-artifacts/${{ matrix.suite }}/ || true
+          
+          # Collect system metrics
+          curl -s http://localhost:9090/metrics > test-artifacts/${{ matrix.suite }}/metrics.txt || true
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-artifacts-${{ matrix.suite }}
+          path: test-artifacts/${{ matrix.suite }}
+          retention-days: 7
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.suite }}
+          path: test-reports/
+          retention-days: 30
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Integration Tests - ${{ matrix.suite }}
+          path: test-reports/integration/test-report-*.json
+          reporter: jest-junit
+          fail-on-error: true
+
+      - name: Stop services
+        if: always()
+        run: |
+          npm run docker:compose:down
+
+  performance-analysis:
+    needs: integration-tests
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: integration-test-artifacts-*
+          merge-multiple: true
+
+      - name: Analyze performance metrics
+        run: |
+          # Create performance analysis script
+          cat > analyze_performance.js << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          function analyzePerformance() {
+            const reportDirs = fs.readdirSync('.').filter(dir => 
+              fs.statSync(dir).isDirectory() && dir.includes('performance')
+            );
+            
+            let totalLatency = 0;
+            let totalThroughput = 0;
+            let totalErrorRate = 0;
+            let reportCount = 0;
+            
+            reportDirs.forEach(dir => {
+              const reportFiles = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
+              reportFiles.forEach(file => {
+                try {
+                  const report = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
+                  if (report.metrics) {
+                    totalLatency += report.metrics.averageLatency || 0;
+                    totalThroughput += report.metrics.throughput || 0;
+                    totalErrorRate += report.metrics.errorRate || 0;
+                    reportCount++;
+                  }
+                } catch (e) {
+                  console.warn(`Failed to parse ${file}:`, e.message);
+                }
+              });
+            });
+            
+            if (reportCount > 0) {
+              const avgLatency = totalLatency / reportCount;
+              const avgThroughput = totalThroughput / reportCount;
+              const avgErrorRate = totalErrorRate / reportCount;
+              
+              console.log('Performance Analysis Results:');
+              console.log(`Average Latency: ${avgLatency.toFixed(2)}ms`);
+              console.log(`Average Throughput: ${avgThroughput.toFixed(2)} req/s`);
+              console.log(`Average Error Rate: ${(avgErrorRate * 100).toFixed(2)}%`);
+              
+              // Set performance thresholds
+              const latencyThreshold = 2000; // 2 seconds
+              const errorRateThreshold = 0.05; // 5%
+              const throughputThreshold = 50; // 50 req/s
+              
+              let failed = false;
+              
+              if (avgLatency > latencyThreshold) {
+                console.error(`❌ Latency threshold exceeded: ${avgLatency}ms > ${latencyThreshold}ms`);
+                failed = true;
+              }
+              
+              if (avgErrorRate > errorRateThreshold) {
+                console.error(`❌ Error rate threshold exceeded: ${(avgErrorRate * 100).toFixed(2)}% > ${(errorRateThreshold * 100)}%`);
+                failed = true;
+              }
+              
+              if (avgThroughput < throughputThreshold) {
+                console.error(`❌ Throughput below threshold: ${avgThroughput} < ${throughputThreshold} req/s`);
+                failed = true;
+              }
+              
+              if (failed) {
+                process.exit(1);
+              } else {
+                console.log('✅ All performance thresholds met');
+              }
+            } else {
+              console.warn('No performance data found');
+            }
+          }
+          
+          analyzePerformance();
+          EOF
+          
+          node analyze_performance.js
+
+  security-scan:
+    needs: integration-tests
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run security scan
+        uses: securecodewarrior/github-action-add-sarif@v1
+        with:
+          sarif-file: 'security-scan-results.sarif'
+
+      - name: Check for security vulnerabilities
+        run: |
+          # Run npm audit
+          npm audit --audit-level moderate
+          
+          # Check for secrets in test files
+          grep -r "password\|secret\|key" tests/ --exclude-dir=node_modules || true
+
+  report-summary:
+    needs: [integration-tests, performance-analysis]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all test reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-reports-*
+          merge-multiple: true
+
+      - name: Generate summary report
+        run: |
+          cat > generate_summary.js << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          function generateSummary() {
+            const reportFiles = fs.readdirSync('.', { recursive: true })
+              .filter(file => file.endsWith('.json') && file.includes('test-report'));
+            
+            let totalTests = 0;
+            let passedTests = 0;
+            let failedTests = 0;
+            let totalDuration = 0;
+            let suiteResults = [];
+            
+            reportFiles.forEach(file => {
+              try {
+                const report = JSON.parse(fs.readFileSync(file, 'utf8'));
+                totalTests += report.totalTests || 0;
+                passedTests += report.passedTests || 0;
+                failedTests += report.failedTests || 0;
+                totalDuration += report.duration || 0;
+                
+                suiteResults.push({
+                  suite: report.testSuite || path.basename(file, '.json'),
+                  passed: report.passedTests || 0,
+                  failed: report.failedTests || 0,
+                  duration: report.duration || 0
+                });
+              } catch (e) {
+                console.warn(`Failed to parse ${file}:`, e.message);
+              }
+            });
+            
+            const summary = {
+              timestamp: new Date().toISOString(),
+              totalTests,
+              passedTests,
+              failedTests,
+              successRate: totalTests > 0 ? (passedTests / totalTests * 100).toFixed(2) : 0,
+              totalDuration: Math.round(totalDuration / 1000), // Convert to seconds
+              suiteResults
+            };
+            
+            console.log('Integration Test Summary:');
+            console.log(`Total Tests: ${totalTests}`);
+            console.log(`Passed: ${passedTests}`);
+            console.log(`Failed: ${failedTests}`);
+            console.log(`Success Rate: ${summary.successRate}%`);
+            console.log(`Total Duration: ${summary.totalDuration}s`);
+            
+            // Write summary to file
+            fs.writeFileSync('test-summary.json', JSON.stringify(summary, null, 2));
+            
+            // Create GitHub Actions summary
+            const githubSummary = `
+          ## Integration Test Results
+          
+          | Metric | Value |
+          |--------|-------|
+          | Total Tests | ${totalTests} |
+          | Passed | ${passedTests} |
+          | Failed | ${failedTests} |
+          | Success Rate | ${summary.successRate}% |
+          | Duration | ${summary.totalDuration}s |
+          
+          ### Suite Results
+          
+          | Suite | Passed | Failed | Duration |
+          |-------|--------|--------|----------|
+          ${suiteResults.map(s => `| ${s.suite} | ${s.passed} | ${s.failed} | ${Math.round(s.duration/1000)}s |`).join('\n')}
+          `;
+          
+            fs.writeFileSync('github-summary.md', githubSummary);
+            
+            // Set GitHub Actions output
+            console.log(`::set-output name=success-rate::${summary.successRate}`);
+            console.log(`::set-output name=total-tests::${totalTests}`);
+            console.log(`::set-output name=failed-tests::${failedTests}`);
+          }
+          
+          generateSummary();
+          EOF
+          
+          node generate_summary.js
+
+      - name: Add summary to GitHub Actions
+        run: |
+          cat github-summary.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload summary report
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-summary
+          path: test-summary.json
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('github-summary.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+
+  notify-on-failure:
+    needs: [integration-tests, performance-analysis, security-scan]
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Notify team on failure
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#ci-alerts'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          message: |
+            Integration tests failed on ${{ github.ref }}
+            
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+            
+            Check the workflow for details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

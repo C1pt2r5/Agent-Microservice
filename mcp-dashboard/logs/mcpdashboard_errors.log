@@ -1,0 +1,24 @@
+2025-08-26 19:56:25 - MCPDashboard.MCPDashboardApp - ERROR - setup_ui:310 - Failed to create main window: unknown option "-text"
+Exception: None
+
+2025-08-26 19:56:27 - MCPDashboard.MCPDashboardApp - ERROR - run:449 - UI setup failed
+Exception: None
+
+2025-08-26 19:56:32 - MCPDashboard.MCPDashboardApp - ERROR - on_closing:345 - Error during service manager shutdown: 
+Exception: None
+
+2025-08-29 21:10:15 - MCPDashboard.MCPDashboardApp - ERROR - setup_ui:311 - Failed to create main window: unknown option "-text"
+Exception: None
+
+2025-08-29 21:10:17 - MCPDashboard.MCPDashboardApp - ERROR - run:450 - UI setup failed
+Exception: None
+
+2025-08-29 21:10:22 - MCPDashboard.MCPDashboardApp - ERROR - on_closing:346 - Error during service manager shutdown: 
+Exception: None
+
+2025-08-29 21:21:58 - MCPDashboard.MCPDashboardApp - ERROR - on_closing:346 - Error during service manager shutdown: Event loop is closed
+Exception: None
+
+2025-08-29 21:21:58 - MCPDashboard.MCPDashboardApp - ERROR - run:511 - Error during cleanup: Event loop is closed
+Exception: None
+

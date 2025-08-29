@@ -1,0 +1,285 @@
+# Production Environment Configuration
+environment: production
+version: "1.0.0"
+
+# Global Settings
+global:
+  project_id: "agentic-microservices-prod"
+  region: "us-central1"
+  cluster_name: "agentic-prod-cluster"
+  namespace: "agentic-prod"
+  log_level: "warn"
+  metrics_enabled: true
+  tracing_enabled: true
+
+# Agent Configuration
+agents:
+  chatbot:
+    enabled: true
+    replicas: 5
+    image: "gcr.io/agentic-microservices-prod/chatbot-agent:stable"
+    port: 8082
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "1000m"
+      limits:
+        memory: "2Gi"
+        cpu: "2000m"
+    environment:
+      NODE_ENV: "production"
+      LOG_LEVEL: "warn"
+      GEMINI_MODEL: "gemini-pro"
+      GEMINI_TEMPERATURE: "0.5"
+      GEMINI_MAX_TOKENS: "2048"
+    health_check:
+      path: "/health"
+      initial_delay: 60
+      period: 10
+      timeout: 5
+      failure_threshold: 3
+
+  fraud_detection:
+    enabled: true
+    replicas: 10
+    image: "gcr.io/agentic-microservices-prod/fraud-detection-agent:stable"
+    port: 8084
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "2000m"
+      limits:
+        memory: "4Gi"
+        cpu: "4000m"
+    environment:
+      NODE_ENV: "production"
+      LOG_LEVEL: "warn"
+      FRAUD_THRESHOLD: "0.9"
+      ANALYSIS_WINDOW: "300000"
+    health_check:
+      path: "/health"
+      initial_delay: 60
+      period: 15
+      timeout: 10
+      failure_threshold: 3
+
+  recommendation:
+    enabled: true
+    replicas: 7
+    image: "gcr.io/agentic-microservices-prod/recommendation-agent:stable"
+    port: 8085
+    resources:
+      requests:
+        memory: "1.5Gi"
+        cpu: "1500m"
+      limits:
+        memory: "3Gi"
+        cpu: "3000m"
+    environment:
+      NODE_ENV: "production"
+      LOG_LEVEL: "warn"
+      RECOMMENDATION_CACHE_TTL: "14400"
+      MAX_RECOMMENDATIONS: "10"
+    health_check:
+      path: "/health"
+      initial_delay: 60
+      period: 10
+      timeout: 5
+      failure_threshold: 3
+
+# Infrastructure Services
+infrastructure:
+  mcp_gateway:
+    enabled: true
+    replicas: 5
+    image: "gcr.io/agentic-microservices-prod/mcp-gateway:stable"
+    port: 8080
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "1000m"
+      limits:
+        memory: "2Gi"
+        cpu: "2000m"
+    environment:
+      NODE_ENV: "production"
+      LOG_LEVEL: "warn"
+      MCP_DEFAULT_TIMEOUT: "30000"
+      MCP_RETRY_MAX_ATTEMPTS: "3"
+    services:
+      user_service:
+        endpoint: "http://user-service:8080"
+        auth_type: "bearer"
+        rate_limit_rpm: 5000
+        timeout: 30000
+        circuit_breaker:
+          failure_threshold: 5
+          recovery_timeout: 30000
+          half_open_max_calls: 3
+      transaction_service:
+        endpoint: "http://transaction-service:8080"
+        auth_type: "api-key"
+        rate_limit_rpm: 10000
+        timeout: 15000
+        circuit_breaker:
+          failure_threshold: 3
+          recovery_timeout: 20000
+          half_open_max_calls: 2
+      product_service:
+        endpoint: "http://product-service:8080"
+        auth_type: "oauth2"
+        rate_limit_rpm: 7500
+        timeout: 25000
+        circuit_breaker:
+          failure_threshold: 4
+          recovery_timeout: 25000
+          half_open_max_calls: 3
+
+  a2a_hub:
+    enabled: true
+    replicas: 5
+    image: "gcr.io/agentic-microservices-prod/a2a-hub:stable"
+    port: 8081
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "1000m"
+      limits:
+        memory: "2Gi"
+        cpu: "2000m"
+    environment:
+      NODE_ENV: "production"
+      LOG_LEVEL: "warn"
+      A2A_MAX_CONNECTIONS: "50000"
+      A2A_HEARTBEAT_INTERVAL: "30000"
+      A2A_MESSAGE_RETENTION: "604800000"
+      A2A_ENABLE_PERSISTENCE: "true"
+      A2A_ENABLE_METRICS: "true"
+
+  adk:
+    enabled: true
+    replicas: 3
+    image: "gcr.io/agentic-microservices-prod/adk:stable"
+    port: 8086
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "1000m"
+      limits:
+        memory: "2Gi"
+        cpu: "2000m"
+    environment:
+      NODE_ENV: "production"
+      LOG_LEVEL: "warn"
+
+# External Dependencies
+external_services:
+  redis:
+    enabled: true
+    host: "redis-service"
+    port: 6379
+    database: 0
+    password_secret: "redis-password"
+    connection_pool:
+      min: 50
+      max: 200
+      idle_timeout: 30000
+
+  gemini:
+    endpoint: "https://generativelanguage.googleapis.com/v1beta"
+    model: "gemini-pro"
+    api_key_secret: "gemini-api-key"
+    rate_limit: 1000
+    timeout: 30000
+    retry:
+      max_attempts: 5
+      initial_delay: 1000
+      max_delay: 30000
+
+# Monitoring and Observability
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9090
+    scrape_interval: "15s"
+    retention: "90d"
+  
+  grafana:
+    enabled: true
+    port: 3000
+    admin_password_secret: "grafana-admin-password"
+  
+  jaeger:
+    enabled: true
+    collector_port: 14268
+    query_port: 16686
+    sampling_rate: 0.01 # 1% sampling for production
+
+# Security Configuration
+security:
+  tls:
+    enabled: true
+    cert_manager: true
+    min_tls_version: "1.2"
+  
+  network_policies:
+    enabled: true
+    default_deny: true
+  
+  pod_security:
+    enabled: true
+    policy: "restricted"
+    enforce: true
+  
+  secrets:
+    encryption_at_rest: true
+    rotation_enabled: true
+
+# Scaling Configuration
+scaling:
+  horizontal_pod_autoscaler:
+    enabled: true
+    min_replicas: 5
+    max_replicas: 50
+    target_cpu_utilization: 60
+    target_memory_utilization: 70
+    scale_down_stabilization: 300
+    scale_up_stabilization: 60
+  
+  vertical_pod_autoscaler:
+    enabled: true
+    update_mode: "Auto"
+    resource_policy: "BestEffort"
+
+# Backup and Recovery
+backup:
+  enabled: true
+  schedule: "0 1 * * *" # Daily at 1 AM
+  retention_days: 90
+  storage_class: "standard"
+  cross_region_replication: true
+  
+# Disaster Recovery
+disaster_recovery:
+  enabled: true
+  rpo: 3600 # 1 hour
+  rto: 1800 # 30 minutes
+  backup_regions:
+    - "us-east1"
+    - "europe-west1"
+  
+# Feature Flags
+features:
+  experimental_features: false
+  debug_mode: false
+  performance_profiling: false
+  detailed_logging: false
+  maintenance_mode: false
+
+# Compliance and Governance
+compliance:
+  data_retention_days: 2555 # 7 years
+  audit_logging: true
+  encryption_in_transit: true
+  encryption_at_rest: true
+  access_logging: true

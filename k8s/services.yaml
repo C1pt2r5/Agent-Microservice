@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-gateway
+  namespace: integration
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: mcp-gateway
+spec:
+  selector:
+    app: mcp-gateway
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: a2a-hub
+  namespace: integration
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: a2a-hub
+spec:
+  selector:
+    app: a2a-hub
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: integration
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: redis
+spec:
+  selector:
+    app: redis
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatbot-agent
+  namespace: ai-agents
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: chatbot-agent
+spec:
+  selector:
+    app: chatbot-agent
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: websocket
+    port: 8081
+    targetPort: 8081
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fraud-detection-agent
+  namespace: ai-agents
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: fraud-detection-agent
+spec:
+  selector:
+    app: fraud-detection-agent
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: recommendation-agent
+  namespace: ai-agents
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: recommendation-agent
+spec:
+  selector:
+    app: recommendation-agent
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: adk-service
+  namespace: infrastructure
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: adk
+spec:
+  selector:
+    app: adk-service
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  type: ClusterIP

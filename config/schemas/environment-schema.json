@@ -1,0 +1,311 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Environment Configuration Schema",
+  "type": "object",
+  "required": ["environment", "version", "global", "agents", "infrastructure"],
+  "properties": {
+    "environment": {
+      "type": "string",
+      "enum": ["development", "staging", "production"]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "global": {
+      "type": "object",
+      "required": ["project_id", "region", "cluster_name", "namespace", "log_level"],
+      "properties": {
+        "project_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$"
+        },
+        "region": {
+          "type": "string",
+          "pattern": "^[a-z]+-[a-z]+\\d+$"
+        },
+        "cluster_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "namespace": {
+          "type": "string",
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+        },
+        "log_level": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"]
+        },
+        "metrics_enabled": {
+          "type": "boolean"
+        },
+        "tracing_enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "agents": {
+      "type": "object",
+      "properties": {
+        "chatbot": { "$ref": "#/definitions/agent" },
+        "fraud_detection": { "$ref": "#/definitions/agent" },
+        "recommendation": { "$ref": "#/definitions/agent" }
+      }
+    },
+    "infrastructure": {
+      "type": "object",
+      "properties": {
+        "mcp_gateway": { "$ref": "#/definitions/infrastructure_service" },
+        "a2a_hub": { "$ref": "#/definitions/infrastructure_service" },
+        "adk": { "$ref": "#/definitions/infrastructure_service" }
+      }
+    },
+    "external_services": {
+      "type": "object",
+      "properties": {
+        "redis": {
+          "type": "object",
+          "required": ["enabled", "host", "port"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "host": { "type": "string" },
+            "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "database": { "type": "integer", "minimum": 0 },
+            "password_secret": { "type": "string" },
+            "connection_pool": {
+              "type": "object",
+              "properties": {
+                "min": { "type": "integer", "minimum": 1 },
+                "max": { "type": "integer", "minimum": 1 },
+                "idle_timeout": { "type": "integer", "minimum": 1000 }
+              }
+            }
+          }
+        },
+        "gemini": {
+          "type": "object",
+          "required": ["endpoint", "model", "api_key_secret"],
+          "properties": {
+            "endpoint": { "type": "string", "format": "uri" },
+            "model": { "type": "string" },
+            "api_key_secret": { "type": "string" },
+            "rate_limit": { "type": "integer", "minimum": 1 },
+            "timeout": { "type": "integer", "minimum": 1000 },
+            "retry": {
+              "type": "object",
+              "properties": {
+                "max_attempts": { "type": "integer", "minimum": 1, "maximum": 10 },
+                "initial_delay": { "type": "integer", "minimum": 100 },
+                "max_delay": { "type": "integer", "minimum": 1000 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "monitoring": {
+      "type": "object",
+      "properties": {
+        "prometheus": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "scrape_interval": { "type": "string", "pattern": "^\\d+[smh]$" },
+            "retention": { "type": "string", "pattern": "^\\d+[dmy]$" }
+          }
+        },
+        "grafana": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "admin_password_secret": { "type": "string" }
+          }
+        },
+        "jaeger": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "collector_port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "query_port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "sampling_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "properties": {
+        "tls": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "cert_manager": { "type": "boolean" },
+            "min_tls_version": { "type": "string", "enum": ["1.0", "1.1", "1.2", "1.3"] }
+          }
+        },
+        "network_policies": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "default_deny": { "type": "boolean" }
+          }
+        },
+        "pod_security": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "policy": { "type": "string", "enum": ["privileged", "baseline", "restricted"] },
+            "enforce": { "type": "boolean" }
+          }
+        },
+        "secrets": {
+          "type": "object",
+          "properties": {
+            "encryption_at_rest": { "type": "boolean" },
+            "rotation_enabled": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "scaling": {
+      "type": "object",
+      "properties": {
+        "horizontal_pod_autoscaler": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "min_replicas": { "type": "integer", "minimum": 1 },
+            "max_replicas": { "type": "integer", "minimum": 1 },
+            "target_cpu_utilization": { "type": "integer", "minimum": 1, "maximum": 100 },
+            "target_memory_utilization": { "type": "integer", "minimum": 1, "maximum": 100 },
+            "scale_down_stabilization": { "type": "integer", "minimum": 0 },
+            "scale_up_stabilization": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "vertical_pod_autoscaler": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "update_mode": { "type": "string", "enum": ["Off", "Initial", "Recreation", "Auto"] },
+            "resource_policy": { "type": "string", "enum": ["BestEffort", "Guaranteed"] }
+          }
+        }
+      }
+    },
+    "backup": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "schedule": { "type": "string" },
+        "retention_days": { "type": "integer", "minimum": 1 },
+        "storage_class": { "type": "string" },
+        "cross_region_replication": { "type": "boolean" }
+      }
+    },
+    "features": {
+      "type": "object",
+      "properties": {
+        "experimental_features": { "type": "boolean" },
+        "debug_mode": { "type": "boolean" },
+        "performance_profiling": { "type": "boolean" },
+        "detailed_logging": { "type": "boolean" },
+        "maintenance_mode": { "type": "boolean" }
+      }
+    }
+  },
+  "definitions": {
+    "agent": {
+      "type": "object",
+      "required": ["enabled", "replicas", "image", "port", "resources"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "replicas": { "type": "integer", "minimum": 0 },
+        "image": { "type": "string" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "resources": { "$ref": "#/definitions/resources" },
+        "environment": {
+          "type": "object",
+          "patternProperties": {
+            "^[A-Z_][A-Z0-9_]*$": { "type": "string" }
+          }
+        },
+        "health_check": { "$ref": "#/definitions/health_check" }
+      }
+    },
+    "infrastructure_service": {
+      "type": "object",
+      "required": ["enabled", "replicas", "image", "port", "resources"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "replicas": { "type": "integer", "minimum": 0 },
+        "image": { "type": "string" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "resources": { "$ref": "#/definitions/resources" },
+        "environment": {
+          "type": "object",
+          "patternProperties": {
+            "^[A-Z_][A-Z0-9_]*$": { "type": "string" }
+          }
+        },
+        "services": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-z_][a-z0-9_]*$": {
+              "type": "object",
+              "properties": {
+                "endpoint": { "type": "string", "format": "uri" },
+                "auth_type": { "type": "string", "enum": ["bearer", "api-key", "oauth2", "none"] },
+                "rate_limit_rpm": { "type": "integer", "minimum": 1 },
+                "timeout": { "type": "integer", "minimum": 1000 },
+                "circuit_breaker": {
+                  "type": "object",
+                  "properties": {
+                    "failure_threshold": { "type": "integer", "minimum": 1 },
+                    "recovery_timeout": { "type": "integer", "minimum": 1000 },
+                    "half_open_max_calls": { "type": "integer", "minimum": 1 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "required": ["requests", "limits"],
+      "properties": {
+        "requests": {
+          "type": "object",
+          "required": ["memory", "cpu"],
+          "properties": {
+            "memory": { "type": "string", "pattern": "^\\d+(Mi|Gi)$" },
+            "cpu": { "type": "string", "pattern": "^\\d+(m|\\d*\\.?\\d*)$" }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "required": ["memory", "cpu"],
+          "properties": {
+            "memory": { "type": "string", "pattern": "^\\d+(Mi|Gi)$" },
+            "cpu": { "type": "string", "pattern": "^\\d+(m|\\d*\\.?\\d*)$" }
+          }
+        }
+      }
+    },
+    "health_check": {
+      "type": "object",
+      "required": ["path", "initial_delay", "period", "timeout", "failure_threshold"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^/.*" },
+        "initial_delay": { "type": "integer", "minimum": 1 },
+        "period": { "type": "integer", "minimum": 1 },
+        "timeout": { "type": "integer", "minimum": 1 },
+        "failure_threshold": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

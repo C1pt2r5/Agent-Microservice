@@ -1,0 +1,526 @@
+# Chatbot Agent Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatbot-agent
+  namespace: ai-agents
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: chatbot-agent
+    app: chatbot-agent
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: chatbot-agent
+  template:
+    metadata:
+      labels:
+        app: chatbot-agent
+        app.kubernetes.io/name: agentic-microservices
+        app.kubernetes.io/component: chatbot-agent
+    spec:
+      serviceAccountName: ai-agent-service-account
+      containers:
+      - name: chatbot-agent
+        image: gcr.io/PROJECT_ID/chatbot-agent:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8081
+          name: websocket
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "8080"
+        - name: WS_PORT
+          value: "8081"
+        - name: METRICS_PORT
+          value: "9090"
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gemini-api-secret
+              key: GEMINI_API_KEY
+        envFrom:
+        - configMapRef:
+            name: ai-agents-config
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: agent-data
+          mountPath: /app/data
+      volumes:
+      - name: agent-data
+        persistentVolumeClaim:
+          claimName: chatbot-agent-pvc
+---
+# Fraud Detection Agent Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fraud-detection-agent
+  namespace: ai-agents
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: fraud-detection-agent
+    app: fraud-detection-agent
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fraud-detection-agent
+  template:
+    metadata:
+      labels:
+        app: fraud-detection-agent
+        app.kubernetes.io/name: agentic-microservices
+        app.kubernetes.io/component: fraud-detection-agent
+    spec:
+      serviceAccountName: ai-agent-service-account
+      containers:
+      - name: fraud-detection-agent
+        image: gcr.io/PROJECT_ID/fraud-detection-agent:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "8080"
+        - name: METRICS_PORT
+          value: "9090"
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gemini-api-secret
+              key: GEMINI_API_KEY
+        envFrom:
+        - configMapRef:
+            name: ai-agents-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: agent-data
+          mountPath: /app/data
+        - name: model-cache
+          mountPath: /app/models
+      volumes:
+      - name: agent-data
+        persistentVolumeClaim:
+          claimName: fraud-detection-agent-pvc
+      - name: model-cache
+        persistentVolumeClaim:
+          claimName: fraud-detection-models-pvc
+---
+# Recommendation Agent Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendation-agent
+  namespace: ai-agents
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: recommendation-agent
+    app: recommendation-agent
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: recommendation-agent
+  template:
+    metadata:
+      labels:
+        app: recommendation-agent
+        app.kubernetes.io/name: agentic-microservices
+        app.kubernetes.io/component: recommendation-agent
+    spec:
+      serviceAccountName: ai-agent-service-account
+      containers:
+      - name: recommendation-agent
+        image: gcr.io/PROJECT_ID/recommendation-agent:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "8080"
+        - name: METRICS_PORT
+          value: "9090"
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gemini-api-secret
+              key: GEMINI_API_KEY
+        envFrom:
+        - configMapRef:
+            name: ai-agents-config
+        resources:
+          requests:
+            memory: "384Mi"
+            cpu: "375m"
+          limits:
+            memory: "768Mi"
+            cpu: "750m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: agent-data
+          mountPath: /app/data
+      volumes:
+      - name: agent-data
+        persistentVolumeClaim:
+          claimName: recommendation-agent-pvc
+---
+# MCP Gateway Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-gateway
+  namespace: integration
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: mcp-gateway
+    app: mcp-gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mcp-gateway
+  template:
+    metadata:
+      labels:
+        app: mcp-gateway
+        app.kubernetes.io/name: agentic-microservices
+        app.kubernetes.io/component: mcp-gateway
+    spec:
+      serviceAccountName: integration-service-account
+      containers:
+      - name: mcp-gateway
+        image: gcr.io/PROJECT_ID/mcp-gateway:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "8080"
+        - name: METRICS_PORT
+          value: "9090"
+        - name: USER_SERVICE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: mcp-auth-secret
+              key: USER_SERVICE_TOKEN
+        - name: TRANSACTION_SERVICE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: mcp-auth-secret
+              key: TRANSACTION_SERVICE_TOKEN
+        - name: PRODUCT_SERVICE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: mcp-auth-secret
+              key: PRODUCT_SERVICE_TOKEN
+        - name: ORDER_SERVICE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: mcp-auth-secret
+              key: ORDER_SERVICE_TOKEN
+        envFrom:
+        - configMapRef:
+            name: integration-config
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+# A2A Hub Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: a2a-hub
+  namespace: integration
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: a2a-hub
+    app: a2a-hub
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: a2a-hub
+  template:
+    metadata:
+      labels:
+        app: a2a-hub
+        app.kubernetes.io/name: agentic-microservices
+        app.kubernetes.io/component: a2a-hub
+    spec:
+      serviceAccountName: integration-service-account
+      containers:
+      - name: a2a-hub
+        image: gcr.io/PROJECT_ID/a2a-hub:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "8080"
+        - name: METRICS_PORT
+          value: "9090"
+        - name: A2A_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: a2a-auth-secret
+              key: A2A_ENCRYPTION_KEY
+        - name: A2A_SIGNING_KEY
+          valueFrom:
+            secretKeyRef:
+              name: a2a-auth-secret
+              key: A2A_SIGNING_KEY
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-auth-secret
+              key: REDIS_PASSWORD
+        envFrom:
+        - configMapRef:
+            name: integration-config
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: integration
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: redis
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        app.kubernetes.io/name: agentic-microservices
+        app.kubernetes.io/component: redis
+    spec:
+      serviceAccountName: integration-service-account
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+          name: redis
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-auth-secret
+              key: REDIS_PASSWORD
+        command:
+        - redis-server
+        - --requirepass
+        - $(REDIS_PASSWORD)
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - --no-auth-warning
+            - -a
+            - $(REDIS_PASSWORD)
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - --no-auth-warning
+            - -a
+            - $(REDIS_PASSWORD)
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-pvc
+---
+# ADK Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adk-service
+  namespace: infrastructure
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: adk
+    app: adk-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: adk-service
+  template:
+    metadata:
+      labels:
+        app: adk-service
+        app.kubernetes.io/name: agentic-microservices
+        app.kubernetes.io/component: adk
+    spec:
+      serviceAccountName: infrastructure-service-account
+      containers:
+      - name: adk
+        image: gcr.io/PROJECT_ID/adk:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "8080"
+        - name: METRICS_PORT
+          value: "9090"
+        envFrom:
+        - configMapRef:
+            name: infrastructure-config
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: adk-templates
+          mountPath: /app/templates
+      volumes:
+      - name: adk-templates
+        persistentVolumeClaim:
+          claimName: adk-templates-pvc

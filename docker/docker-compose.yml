@@ -1,0 +1,261 @@
+version: '3.8'
+
+services:
+  # Redis for A2A Hub message persistence
+  redis:
+    image: redis:7-alpine
+    container_name: agentic-redis
+    restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis-password}
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis-password}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD:-redis-password}", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - agentic-network
+
+  # MCP Gateway
+  mcp-gateway:
+    image: gcr.io/agentic-microservices/mcp-gateway:latest
+    container_name: agentic-mcp-gateway
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - METRICS_PORT=9090
+      - MCP_PORT=8080
+      - MCP_RATE_LIMIT=100
+      - MCP_CIRCUIT_BREAKER_THRESHOLD=5
+      - MCP_CIRCUIT_BREAKER_TIMEOUT=30s
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      - USER_SERVICE_TOKEN=${USER_SERVICE_TOKEN}
+      - TRANSACTION_SERVICE_TOKEN=${TRANSACTION_SERVICE_TOKEN}
+      - PRODUCT_SERVICE_TOKEN=${PRODUCT_SERVICE_TOKEN}
+      - ORDER_SERVICE_TOKEN=${ORDER_SERVICE_TOKEN}
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http = require('http'); const req = http.request({hostname: 'localhost', port: 8080, path: '/health'}, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.end();"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - agentic-network
+
+  # A2A Hub
+  a2a-hub:
+    image: gcr.io/agentic-microservices/a2a-hub:latest
+    container_name: agentic-a2a-hub
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - METRICS_PORT=9090
+      - A2A_PORT=8080
+      - A2A_MESSAGE_RETENTION=24h
+      - A2A_MAX_MESSAGE_SIZE=1MB
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis-password}
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      - A2A_ENCRYPTION_KEY=${A2A_ENCRYPTION_KEY}
+      - A2A_SIGNING_KEY=${A2A_SIGNING_KEY}
+    ports:
+      - "8081:8080"
+      - "9091:9090"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http = require('http'); const req = http.request({hostname: 'localhost', port: 8080, path: '/health'}, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.end();"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - agentic-network
+
+  # Chatbot Agent
+  chatbot-agent:
+    image: gcr.io/agentic-microservices/chatbot-agent:latest
+    container_name: agentic-chatbot-agent
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - WS_PORT=8081
+      - METRICS_PORT=9090
+      - A2A_HUB_URL=http://a2a-hub:8080
+      - A2A_HUB_TIMEOUT=30s
+      - A2A_RETRY_ATTEMPTS=3
+      - A2A_RETRY_DELAY=1s
+      - MCP_GATEWAY_URL=http://mcp-gateway:8080
+      - MCP_TIMEOUT=30s
+      - MCP_RETRY_ATTEMPTS=3
+      - GEMINI_API_ENDPOINT=https://generativelanguage.googleapis.com
+      - GEMINI_MODEL=gemini-1.5-flash
+      - GEMINI_TIMEOUT=60s
+      - GEMINI_MAX_TOKENS=8192
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      - HEALTH_CHECK_PORT=8080
+      - HEALTH_CHECK_PATH=/health
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    ports:
+      - "8082:8080"
+      - "8083:8081"
+      - "9092:9090"
+    depends_on:
+      - mcp-gateway
+      - a2a-hub
+    volumes:
+      - chatbot_data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http = require('http'); const req = http.request({hostname: 'localhost', port: 8080, path: '/health'}, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.end();"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - agentic-network
+
+  # Fraud Detection Agent
+  fraud-detection-agent:
+    image: gcr.io/agentic-microservices/fraud-detection-agent:latest
+    container_name: agentic-fraud-detection-agent
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - METRICS_PORT=9090
+      - A2A_HUB_URL=http://a2a-hub:8080
+      - A2A_HUB_TIMEOUT=30s
+      - A2A_RETRY_ATTEMPTS=3
+      - A2A_RETRY_DELAY=1s
+      - MCP_GATEWAY_URL=http://mcp-gateway:8080
+      - MCP_TIMEOUT=30s
+      - MCP_RETRY_ATTEMPTS=3
+      - GEMINI_API_ENDPOINT=https://generativelanguage.googleapis.com
+      - GEMINI_MODEL=gemini-1.5-flash
+      - GEMINI_TIMEOUT=60s
+      - GEMINI_MAX_TOKENS=8192
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      - HEALTH_CHECK_PORT=8080
+      - HEALTH_CHECK_PATH=/health
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    ports:
+      - "8084:8080"
+      - "9093:9090"
+    depends_on:
+      - mcp-gateway
+      - a2a-hub
+    volumes:
+      - fraud_detection_data:/app/data
+      - fraud_detection_models:/app/models
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http = require('http'); const req = http.request({hostname: 'localhost', port: 8080, path: '/health'}, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.end();"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - agentic-network
+
+  # Recommendation Agent
+  recommendation-agent:
+    image: gcr.io/agentic-microservices/recommendation-agent:latest
+    container_name: agentic-recommendation-agent
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - METRICS_PORT=9090
+      - A2A_HUB_URL=http://a2a-hub:8080
+      - A2A_HUB_TIMEOUT=30s
+      - A2A_RETRY_ATTEMPTS=3
+      - A2A_RETRY_DELAY=1s
+      - MCP_GATEWAY_URL=http://mcp-gateway:8080
+      - MCP_TIMEOUT=30s
+      - MCP_RETRY_ATTEMPTS=3
+      - GEMINI_API_ENDPOINT=https://generativelanguage.googleapis.com
+      - GEMINI_MODEL=gemini-1.5-flash
+      - GEMINI_TIMEOUT=60s
+      - GEMINI_MAX_TOKENS=8192
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      - HEALTH_CHECK_PORT=8080
+      - HEALTH_CHECK_PATH=/health
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    ports:
+      - "8085:8080"
+      - "9094:9090"
+    depends_on:
+      - mcp-gateway
+      - a2a-hub
+    volumes:
+      - recommendation_data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http = require('http'); const req = http.request({hostname: 'localhost', port: 8080, path: '/health'}, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.end();"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - agentic-network
+
+  # ADK Service
+  adk:
+    image: gcr.io/agentic-microservices/adk:latest
+    container_name: agentic-adk
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - METRICS_PORT=9090
+      - PROMETHEUS_PORT=9090
+      - GRAFANA_PORT=3000
+      - ADK_PORT=8080
+      - ADK_TEMPLATES_PATH=/app/templates
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+    ports:
+      - "8086:8080"
+      - "9095:9090"
+    volumes:
+      - adk_templates:/app/templates
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http = require('http'); const req = http.request({hostname: 'localhost', port: 8080, path: '/health'}, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.end();"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - agentic-network
+
+volumes:
+  redis_data:
+    driver: local
+  chatbot_data:
+    driver: local
+  fraud_detection_data:
+    driver: local
+  fraud_detection_models:
+    driver: local
+  recommendation_data:
+    driver: local
+  adk_templates:
+    driver: local
+
+networks:
+  agentic-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,0 +1,3 @@
+[console_scripts]
+mcp-dashboard = app:cli_main
+mcp-dashboard-gui = app:cli_main

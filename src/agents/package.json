@@ -1,0 +1,12 @@
+{
+  "name": "@agentic-microservices/agents",
+  "version": "1.0.0",
+  "description": "AI agents for the agentic microservices system",
+  "main": "index.js",
+  "dependencies": {
+    "@agentic-microservices/types": "file:../types",
+    "@agentic-microservices/integration": "file:../integration",
+    "express": "^4.18.0",
+    "ws": "^8.14.0"
+  }
+}

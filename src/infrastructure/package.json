@@ -1,0 +1,12 @@
+{
+  "name": "@agentic-microservices/infrastructure",
+  "version": "1.0.0",
+  "description": "Infrastructure components including ADK and monitoring",
+  "main": "index.js",
+  "dependencies": {
+    "@agentic-microservices/types": "file:../types",
+    "prom-client": "^15.0.0",
+    "winston": "^3.11.0",
+    "joi": "^17.11.0"
+  }
+}

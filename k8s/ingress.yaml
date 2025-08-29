@@ -1,0 +1,87 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agentic-microservices-ingress
+  namespace: ai-agents
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: ingress
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "agentic-microservices-ip"
+    networking.gke.io/managed-certificates: "agentic-microservices-ssl-cert"
+    kubernetes.io/ingress.allow-http: "false"
+spec:
+  rules:
+  - host: api.agentic-microservices.example.com
+    http:
+      paths:
+      - path: /chatbot
+        pathType: Prefix
+        backend:
+          service:
+            name: chatbot-agent
+            port:
+              number: 8080
+      - path: /chatbot/ws
+        pathType: Prefix
+        backend:
+          service:
+            name: chatbot-agent
+            port:
+              number: 8081
+      - path: /recommendations
+        pathType: Prefix
+        backend:
+          service:
+            name: recommendation-agent
+            port:
+              number: 8080
+      - path: /fraud-detection
+        pathType: Prefix
+        backend:
+          service:
+            name: fraud-detection-agent
+            port:
+              number: 8080
+  - host: integration.agentic-microservices.example.com
+    http:
+      paths:
+      - path: /mcp
+        pathType: Prefix
+        backend:
+          service:
+            name: mcp-gateway
+            port:
+              number: 8080
+      - path: /a2a
+        pathType: Prefix
+        backend:
+          service:
+            name: a2a-hub
+            port:
+              number: 8080
+  - host: admin.agentic-microservices.example.com
+    http:
+      paths:
+      - path: /adk
+        pathType: Prefix
+        backend:
+          service:
+            name: adk-service
+            port:
+              number: 8080
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: agentic-microservices-ssl-cert
+  namespace: ai-agents
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: ssl-cert
+spec:
+  domains:
+  - api.agentic-microservices.example.com
+  - integration.agentic-microservices.example.com
+  - admin.agentic-microservices.example.com

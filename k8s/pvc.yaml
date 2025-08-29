@@ -1,0 +1,101 @@
+# Chatbot Agent PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chatbot-agent-pvc
+  namespace: ai-agents
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: chatbot-agent
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard-rwo
+---
+# Fraud Detection Agent PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fraud-detection-agent-pvc
+  namespace: ai-agents
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: fraud-detection-agent
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: standard-rwo
+---
+# Fraud Detection Models PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fraud-detection-models-pvc
+  namespace: ai-agents
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: fraud-detection-agent
+spec:
+  accessModes:
+  - ReadOnlyMany
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard-rwo
+---
+# Recommendation Agent PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: recommendation-agent-pvc
+  namespace: ai-agents
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: recommendation-agent
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 15Gi
+  storageClassName: standard-rwo
+---
+# Redis PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: integration
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: redis
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard-rwo
+---
+# ADK Templates PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: adk-templates-pvc
+  namespace: infrastructure
+  labels:
+    app.kubernetes.io/name: agentic-microservices
+    app.kubernetes.io/component: adk
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard-rwx

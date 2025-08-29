@@ -1,0 +1,26 @@
+# Include the README and requirements files
+include README.md
+include requirements.txt
+include LICENSE
+
+# Include configuration examples
+include *.example
+recursive-include config *.py *.example
+
+# Include test files
+recursive-include tests *.py
+
+# Include documentation
+recursive-include docs *.md *.rst *.txt
+
+# Exclude compiled Python files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *~
+global-exclude __pycache__
+global-exclude .pytest_cache
+
+# Exclude development files
+exclude .gitignore
+exclude .env*
+exclude *.log

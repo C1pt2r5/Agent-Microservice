@@ -1,0 +1,12 @@
+{
+  "name": "@agentic-microservices/integration",
+  "version": "1.0.0",
+  "description": "Integration layer for MCP and A2A protocols",
+  "main": "index.js",
+  "dependencies": {
+    "@agentic-microservices/types": "file:../types",
+    "axios": "^1.6.0",
+    "redis": "^4.6.0",
+    "ws": "^8.14.0"
+  }
+}

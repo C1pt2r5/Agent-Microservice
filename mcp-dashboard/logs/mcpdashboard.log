@@ -1,0 +1,70 @@
+2025-08-26 19:49:57 - MCPDashboard - INFO - __init__:72 - Logging system initialized - Level: INFO
+2025-08-26 19:49:57 - MCPDashboard.StartupValidator - INFO - run_all_validations:337 - Starting application validation checks...
+2025-08-26 19:49:57 - MCPDashboard.StartupValidator - INFO - run_all_validations:373 - Validation complete: 7 checks, 0 critical failures, 0 warnings
+2025-08-26 19:50:12 - MCPDashboard - INFO - __init__:72 - Logging system initialized - Level: INFO
+2025-08-26 19:50:12 - MCPDashboard.StartupValidator - INFO - run_all_validations:337 - Starting application validation checks...
+2025-08-26 19:50:12 - MCPDashboard.StartupValidator - INFO - run_all_validations:373 - Validation complete: 7 checks, 0 critical failures, 0 warnings
+2025-08-26 19:53:40 - MCPDashboard - INFO - __init__:72 - Logging system initialized - Level: INFO
+2025-08-26 19:53:40 - MCPDashboard.StartupValidator - INFO - run_all_validations:337 - Starting application validation checks...
+2025-08-26 19:53:40 - MCPDashboard.StartupValidator - INFO - run_all_validations:373 - Validation complete: 7 checks, 0 critical failures, 0 warnings
+2025-08-26 19:55:46 - MCPDashboard - INFO - __init__:72 - Logging system initialized - Level: INFO
+2025-08-26 19:55:46 - MCPDashboard.StartupValidator - INFO - run_all_validations:337 - Starting application validation checks...
+2025-08-26 19:55:46 - MCPDashboard.StartupValidator - INFO - run_all_validations:373 - Validation complete: 7 checks, 0 critical failures, 0 warnings
+2025-08-26 19:56:24 - MCPDashboard - INFO - __init__:72 - Logging system initialized - Level: INFO
+2025-08-26 19:56:24 - MCPDashboard.MCPDashboardApp - INFO - _setup_logging:87 - Logging system initialized successfully
+2025-08-26 19:56:24 - MCPDashboard.MCPDashboardApp - INFO - _setup_error_handling:104 - Error handling system ready
+2025-08-26 19:56:24 - MCPDashboard.MCPDashboardApp - INFO - run:358 - Starting MCP Dashboard GUI...
+2025-08-26 19:56:24 - MCPDashboard.MCPDashboardApp - INFO - run:361 - Running startup validation checks...
+2025-08-26 19:56:24 - MCPDashboard.StartupValidator - INFO - run_all_validations:337 - Starting application validation checks...
+2025-08-26 19:56:24 - MCPDashboard.StartupValidator - INFO - run_all_validations:373 - Validation complete: 7 checks, 0 critical failures, 0 warnings
+2025-08-26 19:56:24 - MCPDashboard.MCPDashboardApp - INFO - run:375 - Startup validation completed successfully
+2025-08-26 19:56:24 - MCPDashboard.MCPDashboardApp - INFO - load_configuration:116 - Loaded configuration from: E:\You_tube_notes\SOC\Inteli\.env.mcp-gateway.example
+2025-08-26 19:56:25 - MCPDashboard.MCPDashboardApp - INFO - run:394 - Background event loop started
+2025-08-26 19:56:25 - MCPDashboard.MCPDashboardApp - INFO - initialize_services:258 - Service manager initialized successfully
+2025-08-26 19:56:25 - MCPDashboard.MCPDashboardApp - ERROR - setup_ui:310 - Failed to create main window: unknown option "-text"
+2025-08-26 19:56:27 - MCPDashboard.MCPDashboardApp - ERROR - run:449 - UI setup failed
+2025-08-26 19:56:27 - MCPDashboard.MCPDashboardApp - INFO - on_closing:334 - Application closing requested
+2025-08-26 19:56:32 - MCPDashboard.MCPDashboardApp - ERROR - on_closing:345 - Error during service manager shutdown: 
+2025-08-26 19:57:31 - MCPDashboard - INFO - __init__:72 - Logging system initialized - Level: INFO
+2025-08-26 19:57:31 - MCPDashboard.StartupValidator - INFO - run_all_validations:337 - Starting application validation checks...
+2025-08-26 19:57:32 - MCPDashboard.StartupValidator - INFO - run_all_validations:373 - Validation complete: 7 checks, 0 critical failures, 0 warnings
+2025-08-26 19:58:24 - MCPDashboard - INFO - __init__:72 - Logging system initialized - Level: INFO
+2025-08-26 19:58:24 - MCPDashboard.StartupValidator - INFO - run_all_validations:337 - Starting application validation checks...
+2025-08-26 19:58:24 - MCPDashboard.StartupValidator - INFO - run_all_validations:373 - Validation complete: 7 checks, 0 critical failures, 0 warnings
+2025-08-26 20:01:08 - MCPDashboard - INFO - __init__:72 - Logging system initialized - Level: INFO
+2025-08-26 20:01:08 - MCPDashboard.StartupValidator - INFO - run_all_validations:337 - Starting application validation checks...
+2025-08-26 20:01:08 - MCPDashboard.StartupValidator - INFO - run_all_validations:373 - Validation complete: 7 checks, 0 critical failures, 0 warnings
+2025-08-29 21:10:13 - MCPDashboard - INFO - __init__:72 - Logging system initialized - Level: INFO
+2025-08-29 21:10:13 - MCPDashboard.MCPDashboardApp - INFO - _setup_logging:88 - Logging system initialized successfully
+2025-08-29 21:10:13 - MCPDashboard.MCPDashboardApp - INFO - _setup_error_handling:105 - Error handling system ready
+2025-08-29 21:10:13 - MCPDashboard.MCPDashboardApp - INFO - run:359 - Starting MCP Dashboard GUI...
+2025-08-29 21:10:13 - MCPDashboard.MCPDashboardApp - INFO - run:362 - Running startup validation checks...
+2025-08-29 21:10:13 - MCPDashboard.StartupValidator - INFO - run_all_validations:337 - Starting application validation checks...
+2025-08-29 21:10:14 - MCPDashboard.StartupValidator - INFO - run_all_validations:373 - Validation complete: 7 checks, 0 critical failures, 0 warnings
+2025-08-29 21:10:14 - MCPDashboard.MCPDashboardApp - INFO - run:376 - Startup validation completed successfully
+2025-08-29 21:10:14 - MCPDashboard.MCPDashboardApp - INFO - load_configuration:117 - Loaded configuration from: E:\You_tube_notes\SOC\Inteli\.env.mcp-gateway.example
+2025-08-29 21:10:14 - MCPDashboard.MCPDashboardApp - INFO - run:395 - Background event loop started
+2025-08-29 21:10:14 - MCPDashboard.MCPDashboardApp - INFO - initialize_services:259 - Service manager initialized successfully
+2025-08-29 21:10:15 - MCPDashboard.MCPDashboardApp - ERROR - setup_ui:311 - Failed to create main window: unknown option "-text"
+2025-08-29 21:10:17 - MCPDashboard.MCPDashboardApp - ERROR - run:450 - UI setup failed
+2025-08-29 21:10:17 - MCPDashboard.MCPDashboardApp - INFO - on_closing:335 - Application closing requested
+2025-08-29 21:10:22 - MCPDashboard.MCPDashboardApp - ERROR - on_closing:346 - Error during service manager shutdown: 
+2025-08-29 21:20:30 - MCPDashboard - INFO - __init__:72 - Logging system initialized - Level: INFO
+2025-08-29 21:20:30 - MCPDashboard.MCPDashboardApp - INFO - _setup_logging:88 - Logging system initialized successfully
+2025-08-29 21:20:30 - MCPDashboard.MCPDashboardApp - INFO - _setup_error_handling:105 - Error handling system ready
+2025-08-29 21:20:30 - MCPDashboard.MCPDashboardApp - INFO - run:359 - Starting MCP Dashboard GUI...
+2025-08-29 21:20:30 - MCPDashboard.MCPDashboardApp - INFO - run:362 - Running startup validation checks...
+2025-08-29 21:20:30 - MCPDashboard.StartupValidator - INFO - run_all_validations:337 - Starting application validation checks...
+2025-08-29 21:20:31 - MCPDashboard.StartupValidator - INFO - run_all_validations:373 - Validation complete: 7 checks, 0 critical failures, 0 warnings
+2025-08-29 21:20:31 - MCPDashboard.MCPDashboardApp - INFO - run:376 - Startup validation completed successfully
+2025-08-29 21:20:31 - MCPDashboard.MCPDashboardApp - INFO - load_configuration:117 - Loaded configuration from: E:\You_tube_notes\SOC\Inteli\.env.mcp-gateway.example
+2025-08-29 21:20:31 - MCPDashboard.MCPDashboardApp - INFO - run:395 - Background event loop started
+2025-08-29 21:20:31 - MCPDashboard.MCPDashboardApp - INFO - initialize_services:259 - Service manager initialized successfully
+2025-08-29 21:20:31 - MCPDashboard.MCPDashboardApp - INFO - setup_ui:298 - Main window created successfully
+2025-08-29 21:20:31 - MCPDashboard.MCPDashboardApp - INFO - run:455 - MCP Dashboard GUI started successfully
+2025-08-29 21:20:31 - MCPDashboard.MCPDashboardApp - INFO - run:456 - Close the window or press Ctrl+C to exit
+2025-08-29 21:21:58 - MCPDashboard.MCPDashboardApp - INFO - on_closing:335 - Application closing requested
+2025-08-29 21:21:58 - MCPDashboard.MCPDashboardApp - INFO - run:474 - MCP Dashboard GUI shut down successfully
+2025-08-29 21:21:58 - MCPDashboard.MCPDashboardApp - INFO - on_closing:335 - Application closing requested
+2025-08-29 21:21:58 - MCPDashboard.MCPDashboardApp - ERROR - on_closing:346 - Error during service manager shutdown: Event loop is closed
+2025-08-29 21:21:58 - MCPDashboard.MCPDashboardApp - ERROR - run:511 - Error during cleanup: Event loop is closed

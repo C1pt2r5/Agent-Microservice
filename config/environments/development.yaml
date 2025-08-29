@@ -1,0 +1,253 @@
+# Development Environment Configuration
+environment: development
+version: "1.0.0"
+
+# Global Settings
+global:
+  project_id: "agentic-microservices-dev"
+  region: "us-central1"
+  cluster_name: "agentic-dev-cluster"
+  namespace: "agentic-dev"
+  log_level: "debug"
+  metrics_enabled: true
+  tracing_enabled: true
+
+# Agent Configuration
+agents:
+  chatbot:
+    enabled: true
+    replicas: 1
+    image: "gcr.io/agentic-microservices-dev/chatbot-agent:latest"
+    port: 8082
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    environment:
+      NODE_ENV: "development"
+      LOG_LEVEL: "debug"
+      GEMINI_MODEL: "gemini-pro"
+      GEMINI_TEMPERATURE: "0.7"
+      GEMINI_MAX_TOKENS: "2048"
+    health_check:
+      path: "/health"
+      initial_delay: 30
+      period: 10
+      timeout: 5
+      failure_threshold: 3
+
+  fraud_detection:
+    enabled: true
+    replicas: 1
+    image: "gcr.io/agentic-microservices-dev/fraud-detection-agent:latest"
+    port: 8084
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+    environment:
+      NODE_ENV: "development"
+      LOG_LEVEL: "debug"
+      FRAUD_THRESHOLD: "0.7"
+      ANALYSIS_WINDOW: "300000"
+    health_check:
+      path: "/health"
+      initial_delay: 45
+      period: 15
+      timeout: 10
+      failure_threshold: 3
+
+  recommendation:
+    enabled: true
+    replicas: 1
+    image: "gcr.io/agentic-microservices-dev/recommendation-agent:latest"
+    port: 8085
+    resources:
+      requests:
+        memory: "384Mi"
+        cpu: "375m"
+      limits:
+        memory: "768Mi"
+        cpu: "750m"
+    environment:
+      NODE_ENV: "development"
+      LOG_LEVEL: "debug"
+      RECOMMENDATION_CACHE_TTL: "3600"
+      MAX_RECOMMENDATIONS: "10"
+    health_check:
+      path: "/health"
+      initial_delay: 30
+      period: 10
+      timeout: 5
+      failure_threshold: 3
+
+# Infrastructure Services
+infrastructure:
+  mcp_gateway:
+    enabled: true
+    replicas: 1
+    image: "gcr.io/agentic-microservices-dev/mcp-gateway:latest"
+    port: 8080
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    environment:
+      NODE_ENV: "development"
+      LOG_LEVEL: "debug"
+      MCP_DEFAULT_TIMEOUT: "30000"
+      MCP_RETRY_MAX_ATTEMPTS: "3"
+    services:
+      user_service:
+        endpoint: "http://user-service:8080"
+        auth_type: "bearer"
+        rate_limit_rpm: 100
+        timeout: 30000
+        circuit_breaker:
+          failure_threshold: 5
+          recovery_timeout: 30000
+          half_open_max_calls: 3
+      transaction_service:
+        endpoint: "http://transaction-service:8080"
+        auth_type: "api-key"
+        rate_limit_rpm: 200
+        timeout: 15000
+        circuit_breaker:
+          failure_threshold: 3
+          recovery_timeout: 20000
+          half_open_max_calls: 2
+      product_service:
+        endpoint: "http://product-service:8080"
+        auth_type: "oauth2"
+        rate_limit_rpm: 150
+        timeout: 25000
+        circuit_breaker:
+          failure_threshold: 4
+          recovery_timeout: 25000
+          half_open_max_calls: 3
+
+  a2a_hub:
+    enabled: true
+    replicas: 1
+    image: "gcr.io/agentic-microservices-dev/a2a-hub:latest"
+    port: 8081
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    environment:
+      NODE_ENV: "development"
+      LOG_LEVEL: "debug"
+      A2A_MAX_CONNECTIONS: "1000"
+      A2A_HEARTBEAT_INTERVAL: "30000"
+      A2A_MESSAGE_RETENTION: "86400000"
+      A2A_ENABLE_PERSISTENCE: "true"
+      A2A_ENABLE_METRICS: "true"
+
+  adk:
+    enabled: true
+    replicas: 1
+    image: "gcr.io/agentic-microservices-dev/adk:latest"
+    port: 8086
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    environment:
+      NODE_ENV: "development"
+      LOG_LEVEL: "debug"
+
+# External Dependencies
+external_services:
+  redis:
+    enabled: true
+    host: "redis-service"
+    port: 6379
+    database: 0
+    password_secret: "redis-password"
+    connection_pool:
+      min: 5
+      max: 20
+      idle_timeout: 30000
+
+  gemini:
+    endpoint: "https://generativelanguage.googleapis.com/v1beta"
+    model: "gemini-pro"
+    api_key_secret: "gemini-api-key"
+    rate_limit: 60
+    timeout: 30000
+    retry:
+      max_attempts: 3
+      initial_delay: 1000
+      max_delay: 10000
+
+# Monitoring and Observability
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9090
+    scrape_interval: "15s"
+    retention: "15d"
+  
+  grafana:
+    enabled: true
+    port: 3000
+    admin_password_secret: "grafana-admin-password"
+  
+  jaeger:
+    enabled: true
+    collector_port: 14268
+    query_port: 16686
+    sampling_rate: 0.1
+
+# Security Configuration
+security:
+  tls:
+    enabled: false # Disabled for development
+  
+  network_policies:
+    enabled: false # Disabled for development
+  
+  pod_security:
+    enabled: false # Disabled for development
+  
+  secrets:
+    encryption_at_rest: false # Disabled for development
+
+# Scaling Configuration
+scaling:
+  horizontal_pod_autoscaler:
+    enabled: true
+    min_replicas: 1
+    max_replicas: 3
+    target_cpu_utilization: 70
+    target_memory_utilization: 80
+  
+  vertical_pod_autoscaler:
+    enabled: false # Disabled for development
+
+# Backup and Recovery
+backup:
+  enabled: false # Disabled for development
+  
+# Feature Flags
+features:
+  experimental_features: true
+  debug_mode: true
+  performance_profiling: true
+  detailed_logging: true
